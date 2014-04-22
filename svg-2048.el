@@ -68,7 +68,6 @@ Otherwise the game will use a transparent background."
 (defvar svg-2048-board-color "#bbada0")
 (defvar svg-2048-tile-color "#eee4da")
 
-(defvar svg-2048-padding 8)
 (defvar svg-2048-board-size 4)
 (defvar svg-2048-padding 14)
 (defvar svg-2048-box-size 107)

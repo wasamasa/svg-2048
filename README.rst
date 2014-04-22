@@ -1,6 +1,9 @@
 svg-2048
 =========
 
+`Screencast
+<https://raw.github.com/wasamasa/svg-2048/master/img/screencast.gif>`_
+
 About
 -----
 

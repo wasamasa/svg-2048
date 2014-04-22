@@ -11,8 +11,7 @@ Installation
 ------------
 
 Install via `quelpa <https://github.com/quelpa/quelpa>`_ with ``M-:
-(quelpa '(svg-2048 :fetcher github :url
-"http://github.com/wasamasa/svg-2048"))``.
+(quelpa '(svg-2048 :fetcher github :repo "wasamasa/svg-2048"))``.
 
 Usage
 -----

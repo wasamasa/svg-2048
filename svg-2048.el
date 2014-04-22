@@ -401,6 +401,7 @@ Otherwise the game will use a transparent background."
   (setq svg-2048-score-lighter
         '(:eval (concat " Score: " (number-to-string svg-2048-score)))))
 
+;;;###autoload
 (defun svg-2048 ()
   ;; TODO fix arithmetic error popping up randomly
   ;; TODO add more customizations

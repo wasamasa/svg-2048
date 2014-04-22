@@ -12,7 +12,7 @@ Installation
 
 Install via `quelpa <https://github.com/quelpa/quelpa>`_ with ``M-:
 (quelpa '(svg-2048 :fetcher github :url
-"http://github.com/wasamasa/svg-2048"))`.
+"http://github.com/wasamasa/svg-2048"))``.
 
 Usage
 -----
@@ -48,5 +48,5 @@ Alternatives
 `There's <https://github.com/sprang/emacs-2048>`_ `four
 <https://github.com/samfiechter/2048-mode>`_ `of
 <http://pastebin.com/ZhdB020g>`_ `them
-<https://bitbucket.org/zck/2048.el>`_.
-They're all text though.
+<https://bitbucket.org/zck/2048.el>`_.  Probably even more.  They're
+all text though.

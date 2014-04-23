@@ -413,34 +413,9 @@ in pixels."
                                 (if (< random-number 900) 2 4))
       (when (called-interactively-p) (svg-2048-redraw-board)))))
 
-(define-derived-mode svg-2048-mode special-mode "2048"
-  "A SVG game"
-  (with-current-buffer (get-buffer-create "*svg 2048*")
-    (buffer-disable-undo)
-    (when svg-2048-original-background-p
-      (buffer-face-set :background "#faf8ef"))
-    (svg-2048-new-game)))
-
-(define-minor-mode svg-2048-score-mode
-  "Toggle score display for `svg-2048'."
-  :lighter svg-2048-score-lighter)
-
 (defun svg-2048-score-update ()
   (setq svg-2048-score-lighter
         '(:eval (concat " Score: " (number-to-string svg-2048-score)))))
-
-;;;###autoload
-(defun svg-2048 ()
-  ;; TODO fix arithmetic error popping up randomly
-  ;; TODO add more customizations
-  ;; TODO mimick tile styles (inner glow/shadow/stroke)
-  ;; TODO score file with best score so far
-  ;; TODO implement animation (or at least some hints)
-  (interactive)
-  (switch-to-buffer "*svg 2048*")
-  (svg-2048-mode)
-  (svg-2048-score-mode)
-  (goto-char (point-max)))
 
 (defun svg-2048-fill-board (rows)
   (cl-loop for row in rows for i = 0 then (1+ i) do
@@ -473,6 +448,18 @@ in pixels."
   (insert "\n")
   (setq buffer-read-only t))
 
+(define-derived-mode svg-2048-mode special-mode "2048"
+  "A SVG game"
+  (with-current-buffer (get-buffer-create "*svg 2048*")
+    (buffer-disable-undo)
+    (when svg-2048-original-background-p
+      (buffer-face-set :background svg-2048-background-color))
+    (svg-2048-new-game)))
+
+(define-minor-mode svg-2048-score-mode
+  "Toggle score display for `svg-2048'."
+  :lighter svg-2048-score-lighter)
+
 (define-key svg-2048-mode-map (kbd "w") 'svg-2048-move-up)
 (define-key svg-2048-mode-map (kbd "a") 'svg-2048-move-left)
 (define-key svg-2048-mode-map (kbd "s") 'svg-2048-move-down)
@@ -487,6 +474,18 @@ in pixels."
 (define-key svg-2048-mode-map (kbd "<right>") 'svg-2048-move-right)
 (define-key svg-2048-mode-map (kbd "g") 'svg-2048-redraw-board)
 (define-key svg-2048-mode-map (kbd "n") 'svg-2048-new-game)
+
+;;;###autoload
+(defun svg-2048 ()
+  ;; TODO fix arithmetic error popping up randomly
+  ;; TODO mimick tile styles (inner glow/shadow/stroke)
+  ;; TODO score file with best score so far
+  ;; TODO implement animation (or at least some hints)
+  (interactive)
+  (switch-to-buffer "*svg 2048*")
+  (svg-2048-mode)
+  (svg-2048-score-mode)
+  (goto-char (point-max)))
 
 (provide 'svg-2048)
 

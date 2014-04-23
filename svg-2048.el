@@ -65,14 +65,43 @@ Otherwise the game will use a transparent background."
   :type 'string
   :group 'svg-2048)
 
-(defvar svg-2048-board-color "#bbada0")
-(defvar svg-2048-tile-color "#eee4da")
+(defcustom svg-2048-background-color "#faf8ef"
+  "Color of the background.  Not used when
+`svg-2048-original-background-p' is set to nil."
+  :type 'string
+  :group 'svg-2048)
 
-(defvar svg-2048-board-size 4)
-(defvar svg-2048-padding 14)
-(defvar svg-2048-box-size 107)
-(defvar svg-2048-offset 8)
-(defvar svg-2048-roundness 6)
+(defcustom svg-2048-board-color "#bbada0"
+  "Color of the game board."
+  :type 'string
+  :group 'svg-2048)
+
+(defcustom svg-2048-tile-color "#eee4da"
+  "Default color of the game tile."
+  :type 'string
+  :group 'svg-2048)
+
+(defcustom svg-2048-padding 14
+  "Padding between tiles in pixels."
+  :type 'integer
+  :group 'svg-2048)
+
+(defcustom svg-2048-tile-size 107
+  "Size of each tile in pixels."
+  :type 'integer
+  :group 'svg-2048)
+
+(defcustom svg-2048-offset 8
+  "Offset by which the game board is moved away from the corner
+in pixels."
+  :type 'integer
+  :group 'svg-2048)
+
+(defcustom svg-2048-roundness 6
+  "Rounding factor for board edges. Tiles use half of its value."
+  :type 'integer
+  :group 'svg-2048)
+
 
 (defvar svg-2048-board nil)
 (defvar svg-2048-merged-tiles nil)
@@ -84,9 +113,9 @@ Otherwise the game will use a transparent background."
 
 (defun svg-2048-create-svg ()
   (let* ((field-width (+ (* (1+ svg-2048-board-size) svg-2048-padding)
-                         (* svg-2048-board-size svg-2048-box-size)))
+                         (* svg-2048-board-size svg-2048-tile-size)))
          (field-height (+ (* (1+ svg-2048-board-size) svg-2048-padding)
-                          (* svg-2048-board-size svg-2048-box-size)))
+                          (* svg-2048-board-size svg-2048-tile-size)))
          (width (+ field-width (* 2 svg-2048-offset)))
          (height (+ field-width (* 2 svg-2048-offset))))
     (cl-flet ((n->s (n) (number-to-string n)))
@@ -99,7 +128,7 @@ Otherwise the game will use a transparent background."
             `(g (rect
                  (@ (width ,(n->s width))
                     (height ,(n->s height))
-                    (fill "#faf8ef")))))
+                    (fill ,svg-2048-background-color)))))
          (g (rect
              (@ (width ,(n->s field-width))
                 (height ,(n->s field-height))
@@ -167,10 +196,10 @@ Otherwise the game will use a transparent background."
                         ((= value 2048) "#edc22e")
                         (t "#3c3a32")))
            (tile-x (+ (* (1+ y) svg-2048-padding)
-                      (* y svg-2048-box-size)
+                      (* y svg-2048-tile-size)
                       svg-2048-offset))
            (tile-y (+ (* (1+ x) svg-2048-padding)
-                      (* x svg-2048-box-size)
+                      (* x svg-2048-tile-size)
                       svg-2048-offset))
            (text-size (cond
                        ((< digits 3) "50")
@@ -190,15 +219,15 @@ Otherwise the game will use a transparent background."
                      ((= digits 4) "5")))
            (text-x (+ (* (1+ y) svg-2048-padding)
                       (/ (* (1- (* (1+ y) 2))
-                            svg-2048-box-size) 2)
+                            svg-2048-tile-size) 2)
                       svg-2048-offset))
            (text-y (+ (* (+ x 2) svg-2048-padding)
                       (/ (* (1- (* (1+ x) 2))
-                            svg-2048-box-size) 2)
+                            svg-2048-tile-size) 2)
                       svg-2048-offset)))
       `(g (rect
-           (@ (width ,(n->s svg-2048-box-size))
-              (height ,(n->s svg-2048-box-size))
+           (@ (width ,(n->s svg-2048-tile-size))
+              (height ,(n->s svg-2048-tile-size))
               (rx ,(n->s tile-roundness))
               (fill ,tile-color)
               (x ,(n->s tile-x))

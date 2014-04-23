@@ -102,14 +102,20 @@ in pixels."
   :type 'integer
   :group 'svg-2048)
 
-
-(defvar svg-2048-board nil)
-(defvar svg-2048-merged-tiles nil)
-(defvar svg-2048-maximum-merged-tile 0)
-(defvar svg-2048-game-over-p nil)
-(defvar svg-2048-game-won-p nil)
-(defvar svg-2048-score-lighter " Score: 0")
-(defvar svg-2048-score 0)
+(defvar svg-2048-board nil
+  "Board state.")
+(defvar svg-2048-merged-tiles nil
+  "Holds all tiles merged in current game move.")
+(defvar svg-2048-merged-tile-values '()
+  "Holds all tile values merged from current game move.")
+(defvar svg-2048-game-over-p nil
+  "When set to t, appropriate overlay is displayed.")
+(defvar svg-2048-game-won-p nil
+  "When set to t, appropriate overlay is displayed.")
+(defvar svg-2048-score-lighter " Score: 0"
+  "Initial score lighter.")
+(defvar svg-2048-score 0
+  "Holds the current game score.")
 
 (defun svg-2048-create-svg ()
   (let* ((field-width (+ (* (1+ svg-2048-board-size) svg-2048-padding)
@@ -362,10 +368,10 @@ in pixels."
       (svg-2048-move-tiles direction)
       (svg-2048-set-random-tile)
       (svg-2048-redraw-board)
-      (setq svg-2048-maximum-merged-tile
+      (setq svg-2048-merged-tile-values
             (cl-loop for ((_ . _) . value) in svg-2048-merged-tiles
-                     maximize value))
-      (if (and (equal svg-2048-maximum-merged-tile svg-2048-winning-tile)
+                     collect value))
+      (if (and (memq svg-2048-winning-tile svg-2048-merged-tile-values)
                (null svg-2048-game-won-p))
           (progn
             (setq svg-2048-game-won-p t)

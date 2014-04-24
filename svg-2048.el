@@ -118,6 +118,7 @@ in pixels."
   "Holds the current game score.")
 
 (defun svg-2048-create-svg ()
+  "Create a SVG representation of the current game state."
   (let* ((field-width (+ (* (1+ svg-2048-board-size) svg-2048-padding)
                          (* svg-2048-board-size svg-2048-tile-size)))
          (field-height (+ (* (1+ svg-2048-board-size) svg-2048-padding)
@@ -183,6 +184,8 @@ in pixels."
                     (t nil))))))))
 
 (defun svg-2048-tile (x y value)
+  "Create a SVG representation of a tile.
+X, Y and VALUE are taken in account."
   (cl-flet ((n->s (n) (number-to-string n)))
     (let* ((digits
             (if value (length (number-to-string value)) 0))
@@ -250,16 +253,36 @@ in pixels."
            ,(when (and value (numberp value))
               (n->s value)))))))
 
-(defun svg-2048-get-board-value (x y)
+(defun svg-2048-get-tile-value (x y)
+  "Returns the value of a tile at X and Y."
   (cdr (assoc (cons x y) svg-2048-board)))
 
-(defun svg-2048-set-board-value (x y value)
-  (setq svg-2048-board
-        (-replace-at (-elem-index (assoc (cons x y) svg-2048-board)
-                                  svg-2048-board)
-                     (cons (cons x y) value) svg-2048-board)))
+(defun svg-2048-set-tile-value (x y value)
+  "Sets the value of a tile at X and Y."
+  (if (assoc (cons x y) svg-2048-board)
+      (setq svg-2048-board
+            (-replace-at (-elem-index (assoc (cons x y) svg-2048-board)
+                                      svg-2048-board)
+                         (cons (cons x y) value) svg-2048-board))
+    (add-to-list 'svg-2048-board (cons (cons x y) value) t)))
+
+(defun svg-2048-fill-board (rows)
+  "Fill the board with the specified values.
+ROWS must be of the form ((n n n n) (n n n n) (n n n n)
+\(n n n n))."
+  (setq svg-2048-board '())
+  (cl-loop for i from 0 to (1- svg-2048-board-size) do
+           (cl-loop for j from 0 to (1- svg-2048-board-size) do
+                    (svg-2048-set-tile-value i j (nth j (nth i rows))))))
+
+(defun svg-2048-initialize-board ()
+  (svg-2048-fill-board '()))
 
 (defun svg-2048-new-coord (x y direction)
+  "Returns the new coordinate as a cons cell if a tile at X and Y
+were to move to the direction DIRECTION.  DIRECTION is one of the
+following symbols: 'up, 'down, 'left, 'right.  If the tile can't
+move, the coordinate is returned unchanged."
   (let ((new-x (cond ((eq direction 'up) (max 0 (1- x)))
                      ((eq direction 'down)
                       (min (1- svg-2048-board-size) (1+ x)))
@@ -270,56 +293,75 @@ in pixels."
                      (t y))))
     (cons new-x new-y)))
 
-(defun svg-2048-movable (x y direction)
+(defun svg-2048-movable-p (x y direction)
+  ;; TODO return value
+  "Returns t if the tile at X and Y is movable to the direction
+DIRECTION.  See `svg-2048-new-coord' for a list of valid
+directions."
   (let* ((new-coord (svg-2048-new-coord x y direction))
          (new-x (car new-coord))
          (new-y (cdr new-coord))
-         (value (svg-2048-get-board-value x y))
-         (new-value (svg-2048-get-board-value new-x new-y)))
+         (value (svg-2048-get-tile-value x y))
+         (new-value (svg-2048-get-tile-value new-x new-y)))
     (when (and value (not (equal (cons x y) new-coord)) (null new-value))
       new-coord)))
 
-(defun svg-2048-mergeable (x y direction)
+(defun svg-2048-mergeable-p (x y direction)
+  ;; TODO return value
+  "Returns t if the tile at X and Y is mergeable to the direction
+DIRECTION.  See `svg-2048-new-coord' for a list of valid
+directions."
   (let* ((new-coord (svg-2048-new-coord x y direction))
          (new-x (car new-coord))
          (new-y (cdr new-coord))
-         (value (svg-2048-get-board-value x y))
-         (new-value (svg-2048-get-board-value new-x new-y)))
+         (value (svg-2048-get-tile-value x y))
+         (new-value (svg-2048-get-tile-value new-x new-y)))
     (when (and value (not (equal (cons x y) new-coord))
                new-value (= value new-value))
       new-coord)))
 
 (defun svg-2048-move-tile (x y direction)
-  (let* ((new-coord (svg-2048-movable x y direction))
+  ;; TODO return value
+  "Move the tile at X and Y one step to the direction DIRECTION.
+See `svg-2048-new-coord' for a list of valid directions."
+  (let* ((new-coord (svg-2048-movable-p x y direction))
          (new-x (car new-coord))
          (new-y (cdr new-coord))
-         (value (svg-2048-get-board-value x y)))
+         (value (svg-2048-get-tile-value x y)))
     (when (and value new-coord)
-      (svg-2048-set-board-value new-x new-y value)
-      (svg-2048-set-board-value x y nil)
+      (svg-2048-set-tile-value new-x new-y value)
+      (svg-2048-set-tile-value x y nil)
       new-coord)))
 
 (defun svg-2048-merge-tile (x y direction)
-  (let* ((new-coord (svg-2048-mergeable x y direction))
+  ;; TODO return value
+  "Merge the tile at X and Y into the next tile at DIRECTION.
+See `svg-2048-new-coord' for a list of valid directions."
+  (let* ((new-coord (svg-2048-mergeable-p x y direction))
          (new-x (car new-coord))
          (new-y (cdr new-coord))
-         (value (svg-2048-get-board-value x y)))
+         (value (svg-2048-get-tile-value x y)))
     (when (and value new-coord)
-      (svg-2048-set-board-value new-x new-y (* 2 value))
-      (svg-2048-set-board-value x y nil)
+      (svg-2048-set-tile-value new-x new-y (* 2 value))
+      (svg-2048-set-tile-value x y nil)
       (setq svg-2048-score (+ svg-2048-score (* 2 value)))
       (svg-2048-score-update)
       new-coord)))
 
 (defun svg-2048-move-tile-to-end (x y direction)
+  "Moves the tile at X and Y as far as possible towards
+DIRECTION.  See `svg-2048-new-coord' for a list of valid
+directions.  Once the tile isn't movable, a check is done whether
+it can be merged towards DIRECTION.  If it is, the tile is merged
+once and the move is finished."
   (let ((current-x x)
         (current-y y)
         (new-coord (svg-2048-new-coord x y direction)))
-    (while (svg-2048-movable current-x current-y direction)
+    (while (svg-2048-movable-p current-x current-y direction)
       (setq new-coord (svg-2048-move-tile current-x current-y direction))
       (setq current-x (car new-coord))
       (setq current-y (cdr new-coord)))
-    (when (svg-2048-mergeable current-x current-y direction)
+    (when (svg-2048-mergeable-p current-x current-y direction)
       (setq new-coord (svg-2048-new-coord current-x current-y direction))
       (when (null (assoc new-coord svg-2048-merged-tiles))
         (svg-2048-merge-tile current-x current-y direction)
@@ -327,9 +369,15 @@ in pixels."
         (setq current-y (cdr new-coord))
         (add-to-list 'svg-2048-merged-tiles
                      (cons (cons current-x current-y)
-                           (svg-2048-get-board-value current-x current-y)))))))
+                           (svg-2048-get-tile-value current-x current-y)))))))
 
 (defun svg-2048-move-tiles (direction)
+  "Move all tiles towards DIRECTION.  See `svg-2048-new-coord'
+for a list of valid directions.  The function progresses from the
+row of tiles that are the closest to the side of DIRECTION to the
+row of tiles that are the farthest from the side of DIRECTION.
+For example if DIRECTION were 'left, it would start with the
+leftmost and finish with the rightmost tiles."
   (let ((ij-list
          (cond ((eq direction 'up)
                 (cl-loop for i from 1 to (1- svg-2048-board-size) nconc
@@ -347,22 +395,28 @@ in pixels."
                 (cl-loop for j from (- svg-2048-board-size 2) downto 0 nconc
                          (cl-loop for i from 0 to (1- svg-2048-board-size)
                                   collect (cons i j)))))))
-    (cl-loop for (i . j) in ij-list when (svg-2048-get-board-value i j) do
+    (cl-loop for (i . j) in ij-list when (svg-2048-get-tile-value i j) do
              (svg-2048-move-tile-to-end i j direction))))
 
 (defun svg-2048-empty-tiles ()
+  "Returns a list of empty tiles."
   (cl-loop for ((i . j) . value) in svg-2048-board
            if (null value) collect
            (cons i j)))
 
 (defun svg-2048-move-possible-p (directions)
+  "Returns t if it's possible for the player to do another move."
   (cl-loop named outer for direction in directions do
            (cl-loop for ((i . j) . value) in svg-2048-board
-                    when (or (svg-2048-movable i j direction)
-                             (svg-2048-mergeable i j direction))
+                    when (or (svg-2048-movable-p i j direction)
+                             (svg-2048-mergeable-p i j direction))
                     do (cl-return-from outer t))))
 
 (defun svg-2048-do-move (direction)
+  "Handles the game logic.
+Makes sure that if the player lost or won, the game does the
+correct actions such as displaying the appropriate overlay or
+asking how to proceed."
   (when (svg-2048-move-possible-p (list direction))
       (setq svg-2048-merged-tiles '())
       (svg-2048-move-tiles direction)
@@ -391,22 +445,28 @@ in pixels."
           (svg-2048-redraw-board))))))
 
 (defun svg-2048-move-left ()
+  "Move all tiles left."
   (interactive)
   (svg-2048-do-move 'left))
 
 (defun svg-2048-move-right ()
+  "Move all tiles right."
   (interactive)
   (svg-2048-do-move 'right))
 
 (defun svg-2048-move-up ()
+  "Move all tiles up."
   (interactive)
   (svg-2048-do-move 'up))
 
 (defun svg-2048-move-down ()
+  "Move all tiles down."
   (interactive)
   (svg-2048-do-move 'down))
 
 (defun svg-2048-set-random-tile ()
+  "Choose a random empty tile, then set its value to 2 (90% of
+the time) or 4."
   (interactive)
   (let* ((empty-tiles (svg-2048-empty-tiles))
          (random-number (random 1001))
@@ -415,27 +475,12 @@ in pixels."
          (random-tile-x (car random-tile))
          (random-tile-y (cdr random-tile)))
     (when empty-tiles
-      (svg-2048-set-board-value random-tile-x random-tile-y
+      (svg-2048-set-tile-value random-tile-x random-tile-y
                                 (if (< random-number 900) 2 4))
       (when (called-interactively-p) (svg-2048-redraw-board)))))
 
-(defun svg-2048-score-update ()
-  (setq svg-2048-score-lighter
-        '(:eval (concat " Score: " (number-to-string svg-2048-score)))))
-
-(defun svg-2048-fill-board (rows)
-  (cl-loop for row in rows for i = 0 then (1+ i) do
-           (cl-loop for tile in row for j = 0 then (1+ j) do
-                    (svg-2048-set-board-value i j tile))))
-
-(defun svg-2048-initialize-board ()
-  (setq svg-2048-board
-        (cl-loop for i from 0 to (1- svg-2048-board-size)
-                 nconc
-                 (cl-loop for j from 0 to (1- svg-2048-board-size) collect
-                          (cons (cons i j) nil)))))
-
 (defun svg-2048-new-game ()
+  "Starts a new game.  All game state is reset."
   (interactive)
   (svg-2048-initialize-board)
   (svg-2048-set-random-tile)
@@ -447,6 +492,7 @@ in pixels."
   (svg-2048-redraw-board))
 
 (defun svg-2048-redraw-board ()
+  "Redraws the game board."
   (interactive)
   (setq buffer-read-only nil)
   (erase-buffer)
@@ -455,7 +501,7 @@ in pixels."
   (setq buffer-read-only t))
 
 (define-derived-mode svg-2048-mode special-mode "2048"
-  "A SVG game"
+  "A SVG game."
   (with-current-buffer (get-buffer-create "*svg 2048*")
     (buffer-disable-undo)
     (when svg-2048-original-background-p
@@ -463,8 +509,14 @@ in pixels."
     (svg-2048-new-game)))
 
 (define-minor-mode svg-2048-score-mode
-  "Toggle score display for `svg-2048'."
+  "Toggles score display for `svg-2048'."
   :lighter svg-2048-score-lighter)
+
+(defun svg-2048-score-update ()
+  "Updates the score displayed in the mode line."
+  (setq svg-2048-score-lighter
+        ;; TODO use format and make the lighter customizable
+        '(:eval (concat " Score: " (number-to-string svg-2048-score)))))
 
 (define-key svg-2048-mode-map (kbd "w") 'svg-2048-move-up)
 (define-key svg-2048-mode-map (kbd "a") 'svg-2048-move-left)
@@ -483,7 +535,7 @@ in pixels."
 
 ;;;###autoload
 (defun svg-2048 ()
-  ;; TODO fix arithmetic error popping up randomly
+  "Open a new game buffer to play 2048."
   ;; TODO mimick tile styles (inner glow/shadow/stroke)
   ;; TODO score file with best score so far
   ;; TODO implement animation (or at least some hints)

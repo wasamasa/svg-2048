@@ -60,6 +60,18 @@ Otherwise the game will use a transparent background."
   :type 'boolean
   :group 'svg-2048)
 
+(defcustom svg-2048-display-current-score t
+  "When t, display the current score using
+  `svg-2048-score-mode'."
+  :type 'boolean
+  :group 'svg-2048)
+
+(defcustom svg-2048-score-lighter " Score: %i"
+  "Score lighter format string.
+Must contain a %i place holder for the current score."
+  :type 'string
+  :group 'svg-2048)
+
 (defcustom svg-2048-font "sans-serif"
   "Font to use for tiles."
   :type 'string
@@ -112,9 +124,7 @@ in pixels."
   "When set to t, appropriate overlay is displayed.")
 (defvar svg-2048-game-won nil
   "When set to t, appropriate overlay is displayed.")
-(defvar svg-2048-score-lighter " Score: 0"
-  "Initial score lighter.")
-(defvar svg-2048-score 0
+(defvar svg-2048-current-score 0
   "Holds the current game score.")
 
 (defun svg-2048-create-svg ()
@@ -337,9 +347,8 @@ See `svg-2048-new-coord' for a list of valid directions."
     (when (and value new-coord)
       (svg-2048-set-tile-value new-x new-y (* 2 value))
       (svg-2048-set-tile-value x y nil)
-      (setq svg-2048-score (+ svg-2048-score (* 2 value)))
-      (svg-2048-score-update)
-      new-coord)))
+      (setq svg-2048-current-score (+ svg-2048-current-score (* 2 value)))
+      (svg-2048-current-score-update))))
 
 (defun svg-2048-move-tile-to-end (x y direction)
   "Moves the tile at X and Y as far as possible towards
@@ -506,11 +515,10 @@ the time) or 4."
   "Toggles score display for `svg-2048'."
   :lighter svg-2048-score-lighter)
 
-(defun svg-2048-score-update ()
+(defun svg-2048-current-score-update ()
   "Updates the score displayed in the mode line."
   (setq svg-2048-score-lighter
-        ;; TODO use format and make the lighter customizable
-        '(:eval (concat " Score: " (number-to-string svg-2048-score)))))
+        '(:eval (format svg-2048-score-lighter svg-2048-current-score))))
 
 (define-key svg-2048-mode-map (kbd "w") 'svg-2048-move-up)
 (define-key svg-2048-mode-map (kbd "a") 'svg-2048-move-left)
@@ -536,7 +544,8 @@ the time) or 4."
   (interactive)
   (switch-to-buffer "*svg 2048*")
   (svg-2048-mode)
-  (svg-2048-score-mode)
+  (when svg-2048-display-current-score
+    (svg-2048-score-mode))
   (goto-char (point-max)))
 
 (provide 'svg-2048)

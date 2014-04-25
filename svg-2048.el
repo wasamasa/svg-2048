@@ -294,7 +294,6 @@ move, the coordinate is returned unchanged."
     (cons new-x new-y)))
 
 (defun svg-2048-movable-p (x y direction)
-  ;; TODO return value
   "Returns t if the tile at X and Y is movable to the direction
 DIRECTION.  See `svg-2048-new-coord' for a list of valid
 directions."
@@ -303,11 +302,9 @@ directions."
          (new-y (cdr new-coord))
          (value (svg-2048-get-tile-value x y))
          (new-value (svg-2048-get-tile-value new-x new-y)))
-    (when (and value (not (equal (cons x y) new-coord)) (null new-value))
-      new-coord)))
+    (when (and value (not (equal (cons x y) new-coord)) (null new-value)) t)))
 
 (defun svg-2048-mergeable-p (x y direction)
-  ;; TODO return value
   "Returns t if the tile at X and Y is mergeable to the direction
 DIRECTION.  See `svg-2048-new-coord' for a list of valid
 directions."
@@ -317,27 +314,23 @@ directions."
          (value (svg-2048-get-tile-value x y))
          (new-value (svg-2048-get-tile-value new-x new-y)))
     (when (and value (not (equal (cons x y) new-coord))
-               new-value (= value new-value))
-      new-coord)))
+               new-value (= value new-value)) t)))
 
 (defun svg-2048-move-tile (x y direction)
-  ;; TODO return value
   "Move the tile at X and Y one step to the direction DIRECTION.
 See `svg-2048-new-coord' for a list of valid directions."
-  (let* ((new-coord (svg-2048-movable-p x y direction))
+  (let* ((new-coord (svg-2048-new-coord x y direction))
          (new-x (car new-coord))
          (new-y (cdr new-coord))
          (value (svg-2048-get-tile-value x y)))
     (when (and value new-coord)
       (svg-2048-set-tile-value new-x new-y value)
-      (svg-2048-set-tile-value x y nil)
-      new-coord)))
+      (svg-2048-set-tile-value x y nil))))
 
 (defun svg-2048-merge-tile (x y direction)
-  ;; TODO return value
   "Merge the tile at X and Y into the next tile at DIRECTION.
 See `svg-2048-new-coord' for a list of valid directions."
-  (let* ((new-coord (svg-2048-mergeable-p x y direction))
+  (let* ((new-coord (svg-2048-new-coord x y direction))
          (new-x (car new-coord))
          (new-y (cdr new-coord))
          (value (svg-2048-get-tile-value x y)))
@@ -358,7 +351,8 @@ once and the move is finished."
         (current-y y)
         (new-coord (svg-2048-new-coord x y direction)))
     (while (svg-2048-movable-p current-x current-y direction)
-      (setq new-coord (svg-2048-move-tile current-x current-y direction))
+      (setq new-coord (svg-2048-new-coord current-x current-y direction))
+      (svg-2048-move-tile current-x current-y direction)
       (setq current-x (car new-coord))
       (setq current-y (cdr new-coord)))
     (when (svg-2048-mergeable-p current-x current-y direction)

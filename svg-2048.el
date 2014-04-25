@@ -1,11 +1,11 @@
-;;; svg-2048.el --- A SVG version of the titular game
+;;; svg-2048.el --- A SVG version of the titular HTML5 game
 
 ;; Copyright (C) 2014 Vasilij Schneidermann <v.schneidermann@gmail.com>
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/eyebrowse
 ;; Version: 0.0.1
-;; Package-Requires: ((dash "2.4.0") (s "1.4.0") (esxml "0.3.0") (emacs "24.3"))
+;; Package-Requires: ((dash "2.4.0") (esxml "0.3.0") (emacs "24.3"))
 ;; Keywords: games
 
 ;; This file is NOT part of GNU Emacs.

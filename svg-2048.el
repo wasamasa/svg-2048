@@ -110,7 +110,8 @@ in pixels."
   :group 'svg-2048)
 
 (defcustom svg-2048-roundness 6
-  "Rounding factor for board edges. Tiles use half of its value."
+  "Rounding factor for board edges.
+Tiles use half of its value."
   :type 'integer
   :group 'svg-2048)
 
@@ -269,12 +270,14 @@ X, Y and VALUE are taken in account."
 
 (defun svg-2048-set-tile-value (x y value)
   "Sets the value of a tile at X and Y."
-  (if (assoc (cons x y) svg-2048-board)
-      (setq svg-2048-board
-            (-replace-at (-elem-index (assoc (cons x y) svg-2048-board)
-                                      svg-2048-board)
-                         (cons (cons x y) value) svg-2048-board))
-    (add-to-list 'svg-2048-board (cons (cons x y) value) t)))
+  (let* ((coord (cons x y))
+         (old-tile (assoc coord svg-2048-board))
+         (new-tile (cons coord value)))
+    (if old-tile
+        (setq svg-2048-board
+              (-replace-at (-elem-index old-tile svg-2048-board)
+                           new-tile svg-2048-board))
+      (add-to-list 'svg-2048-board new-tile t))))
 
 (defun svg-2048-fill-board (rows)
   "Fill the board with the specified values.

@@ -54,7 +54,7 @@ capabilities."
   :type 'integer
   :group 'svg-2048)
 
-(defcustom svg-2048-original-background-p nil
+(defcustom svg-2048-use-original-background nil
   "When t, use the original background for the entire buffer.
 Otherwise the game will use a transparent background."
   :type 'boolean
@@ -67,7 +67,7 @@ Otherwise the game will use a transparent background."
 
 (defcustom svg-2048-background-color "#faf8ef"
   "Color of the background.  Not used when
-`svg-2048-original-background-p' is set to nil."
+`svg-2048-use-original-background' is set to nil."
   :type 'string
   :group 'svg-2048)
 
@@ -108,9 +108,9 @@ in pixels."
   "Holds all tiles merged in current game move.")
 (defvar svg-2048-merged-tile-values '()
   "Holds all tile values merged from current game move.")
-(defvar svg-2048-game-over-p nil
+(defvar svg-2048-game-over nil
   "When set to t, appropriate overlay is displayed.")
-(defvar svg-2048-game-won-p nil
+(defvar svg-2048-game-won nil
   "When set to t, appropriate overlay is displayed.")
 (defvar svg-2048-score-lighter " Score: 0"
   "Initial score lighter.")
@@ -131,7 +131,7 @@ in pixels."
          (@ (xmlns "http://www.w3.org/2000/svg")
             (width ,(n->s width))
             (height ,(n->s height)))
-         ,(when svg-2048-original-background-p
+         ,(when svg-2048-use-original-background
             `(g (rect
                  (@ (width ,(n->s width))
                     (height ,(n->s height))
@@ -145,7 +145,7 @@ in pixels."
                 (fill ,svg-2048-board-color)))
             ,@(cl-loop for ((i . j) . value) in svg-2048-board collect
                        (svg-2048-tile i j value))
-            ,(cond ((not (null svg-2048-game-over-p))
+            ,(cond ((not (null svg-2048-game-over))
                      `(g (rect
                           (@ (width ,(n->s field-width))
                              (height ,(n->s field-height))
@@ -163,7 +163,7 @@ in pixels."
                              (x ,(n->s (/ field-width 2)))
                              (y ,(n->s (+ (/ field-height 2) 30))))
                           "Game over!")))
-                    ((not (null svg-2048-game-won-p))
+                    ((not (null svg-2048-game-won))
                      `(g (rect
                           (@ (width ,(n->s field-width))
                              (height ,(n->s field-height))
@@ -426,19 +426,19 @@ asking how to proceed."
             (cl-loop for ((_ . _) . value) in svg-2048-merged-tiles
                      collect value))
       (if (and (memq svg-2048-winning-tile svg-2048-merged-tile-values)
-               (null svg-2048-game-won-p))
+               (null svg-2048-game-won))
           (progn
-            (setq svg-2048-game-won-p t)
+            (setq svg-2048-game-won t)
             (svg-2048-redraw-board)
             (if (yes-or-no-p "Continue?")
                 (progn
-                  (setq svg-2048-game-won-p nil)
+                  (setq svg-2048-game-won nil)
                   (svg-2048-redraw-board))
               (setq svg-2048-merged-tiles '())
               (svg-2048-new-game)
               (svg-2048-redraw-board)))
       (unless (svg-2048-move-possible-p '(up down left right))
-        (setq svg-2048-game-over-p t)
+        (setq svg-2048-game-over t)
         (svg-2048-redraw-board)
         (when (yes-or-no-p "New Game?")
           (svg-2048-new-game)
@@ -485,9 +485,9 @@ the time) or 4."
   (svg-2048-initialize-board)
   (svg-2048-set-random-tile)
   (svg-2048-set-random-tile)
-  (setq svg-2048-score 0)
-  (setq svg-2048-game-over-p nil)
-  (setq svg-2048-game-won-p nil)
+  (setq svg-2048-current-score 0)
+  (setq svg-2048-game-over nil)
+  (setq svg-2048-game-won nil)
   (setq svg-2048-merged-tiles '())
   (svg-2048-redraw-board))
 
@@ -504,7 +504,7 @@ the time) or 4."
   "A SVG game."
   (with-current-buffer (get-buffer-create "*svg 2048*")
     (buffer-disable-undo)
-    (when svg-2048-original-background-p
+    (when svg-2048-use-original-background
       (buffer-face-set :background svg-2048-background-color))
     (svg-2048-new-game)))
 

@@ -1,15 +1,18 @@
 (require 'esxml)
+(require 'memdb)
 
 (defvar svg-animation-demo-interval (/ 1.0 50))
 
-(defvar svg-animation-demo-state
-  `((:x 0 :y 0 :type static :layer foreground
-        :frames 10.0 :frame 0 :msecs 500
-        :beg-x 0 :beg-y 0
-        :end-x 240 :end-y 0)
-    (:type board :layer background)
-    ,@(cl-loop for i from 0 to 3 collect
-               `(:x ,i :y 0 :type background :layer background))))
+(defvar svg-animation-demo-state (memdb-create))
+(memdb-add-records svg-animation-demo-state
+  '(:x 0 :y 0 :type static :layer foreground
+       :frames 10.0 :frame 0 :msecs 500
+       :beg-x 0 :beg-y 0
+       :end-x 240 :end-y 0)
+  '(:type board :layer background))
+(cl-loop for i from 0 to 3 do
+         (memdb-add-record svg-animation-demo-state
+           `(:x ,i :y 0 :type background-tile :layer background)))
 
 (defun svg-animation-demo-render-state (plist)
   (let ((board-color "#aaaaaa")
@@ -28,7 +31,7 @@
             (y ,(number-to-string offset))
             (rx ,(number-to-string roundness))
             (fill ,board-color))))
-      ((eq (plist-get plist :type) 'background)
+      ((eq (plist-get plist :type) 'background-tile)
        `(rect
          (@ (width ,(number-to-string tile-size))
             (height ,(number-to-string tile-size))
@@ -72,19 +75,23 @@
   (sxml-to-xml
    `(svg
      (@ (xmlns "http://www.w3.org/2000/svg") (width "360") (height "120"))
-     (g ,@(cl-loop for plist in svg-animation-demo-state
-                   when (eq (plist-get plist :layer) 'background)
+     ;; abstract this away, too (background, foreground, animation layer)
+     (g ,@(cl-loop for plist in
+                   (memdb-select svg-animation-demo-state '(:layer background))
                    collect
                    (svg-animation-demo-render-state plist)))
-     (g ,@(cl-loop for plist in svg-animation-demo-state
-                   when (eq (plist-get plist :layer) 'foreground)
+     (g ,@(cl-loop for plist in
+                   (memdb-select svg-animation-demo-state '(:layer foreground))
+                   collect
+                   (svg-animation-demo-render-state plist)))
+     (g ,@(cl-loop for plist in
+                   (memdb-select svg-animation-demo-state '(:layer animated))
                    collect
                    (svg-animation-demo-render-state plist))))))
 
 (defun svg-animation-demo-init ()
   (interactive)
-  (setcar svg-animation-demo-state
-          (plist-put (car svg-animation-demo-state) :type 'static))
+  (memdb-update svg-animation-demo-state '(:layer foreground) :type 'static)
   (svg-animation-demo-redraw))
 
 (defun svg-animation-demo-redraw ()
@@ -115,20 +122,19 @@
 
 (defun svg-animation-demo-move ()
   (interactive)
-  (setcar svg-animation-demo-state
-          (plist-put (car svg-animation-demo-state) :type 'moving))
-  (setcar svg-animation-demo-state
-          (plist-put (car svg-animation-demo-state) :frame 0))
-  (while (< (plist-get (car svg-animation-demo-state) :frame)
-            (plist-get (car svg-animation-demo-state) :frames))
+  (memdb-update svg-animation-demo-state '(:layer foreground) :type 'moving)
+  (memdb-update svg-animation-demo-state '(:layer foreground) :frame 0)
+  (while (< (memdb-select-at svg-animation-demo-state
+                             '(:layer foreground) :frame)
+            (memdb-select-at svg-animation-demo-state
+                             '(:layer foreground) :frames))
     (svg-animation-demo-redraw)
     (sit-for svg-animation-demo-interval)
-    (setcar svg-animation-demo-state
-            (plist-put (car svg-animation-demo-state) :frame
-                       (1+ (plist-get (car svg-animation-demo-state) :frame)))))
+    (memdb-update svg-animation-demo-state '(:layer foreground)
+      :frame (1+ (memdb-select-at svg-animation-demo-state
+                                  '(:layer foreground) :frame))))
   (svg-animation-demo-redraw)
-  (setcar svg-animation-demo-state
-          (plist-put (car svg-animation-demo-state) :frame 0)))
+  (memdb-update svg-animation-demo-state '(:layer foreground) :frame 0))
 
 (define-key svg-animation-demo-mode-map (kbd "g") 'svg-animation-demo-redraw)
 (define-key svg-animation-demo-mode-map (kbd "i") 'svg-animation-demo-init)

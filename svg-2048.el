@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 Vasilij Schneidermann <v.schneidermann@gmail.com>
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
-;; URL: https://github.com/wasamasa/eyebrowse
+;; URL: https://github.com/wasamasa/svg-2048
 ;; Version: 0.0.1
 ;; Package-Requires: ((dash "2.4.0") (esxml "0.3.0") (emacs "24.3"))
 ;; Keywords: games

@@ -102,16 +102,12 @@
   (insert "\n")
   (setq buffer-read-only t))
 
-(defun svg-animation-demo-begin ()
-  (interactive)
-  (svg-animation-demo-init)
-  (svg-animation-demo-redraw))
-
 (define-derived-mode svg-animation-demo-mode special-mode "SVG Animation Demo"
   "A SVG animation demo."
   (with-current-buffer (get-buffer "*svg animation demo*")
     (buffer-disable-undo)
-    (svg-animation-demo-begin)))
+    (svg-animation-demo-init)
+    (svg-animation-demo-redraw)))
 
 (defun svg-animation-demo ()
   "Start the animation demo"

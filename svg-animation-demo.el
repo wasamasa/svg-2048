@@ -1,17 +1,17 @@
 (require 'esxml)
-(require 'memdb)
+(require 'pdata)
 
 (defvar svg-animation-demo-interval (/ 1.0 50))
 
-(defvar svg-animation-demo-state (memdb-create))
-(memdb-add-records svg-animation-demo-state
+(defvar svg-animation-demo-state (pdata-create))
+(pdata-add-records svg-animation-demo-state
   '(:x 0 :y 0 :type static :layer foreground
        :frames 10.0 :frame 0 :msecs 500
        :beg-x 0 :beg-y 0
        :end-x 240 :end-y 0)
   '(:type board :layer background))
 (cl-loop for i from 0 to 3 do
-         (memdb-add-record svg-animation-demo-state
+         (pdata-add-record svg-animation-demo-state
            `(:x ,i :y 0 :type background-tile :layer background)))
 
 (defun svg-animation-demo-render-state (plist)
@@ -20,10 +20,19 @@
         (tile-size 64)
         (padding 16)
         (offset 12)
-        (roundness 8))
+        (roundness 8)
+        (type (plist-get plist :type))
+        (frame (plist-get plist :frame))
+        (frames (plist-get plist :frames))
+        (beg-x (plist-get plist :beg-x))
+        (beg-y (plist-get plist :beg-y))
+        (end-x (plist-get plist :end-x))
+        (end-y (plist-get plist :end-y))
+        (x (plist-get plist :x))
+        (y (plist-get plist :y)))
     (sxml-to-xml
      (cond
-      ((eq (plist-get plist :type) 'board)
+      ((eq type 'board)
        `(rect
          (@ (width ,(number-to-string (+ (* 4 tile-size) (* 5 padding))))
             (height ,(number-to-string (+ (* 1 tile-size) (* 2 padding))))
@@ -31,42 +40,42 @@
             (y ,(number-to-string offset))
             (rx ,(number-to-string roundness))
             (fill ,board-color))))
-      ((eq (plist-get plist :type) 'background-tile)
+      ((eq type 'background-tile)
        `(rect
          (@ (width ,(number-to-string tile-size))
             (height ,(number-to-string tile-size))
             (x ,(number-to-string
-                 (+ (* (plist-get plist :x) tile-size)
-                    (* (1+ (plist-get plist :x)) padding) offset)))
+                 (+ (* x tile-size)
+                    (* (1+ x) padding) offset)))
             (y ,(number-to-string
-                 (+ (* (plist-get plist :y) tile-size)
-                    (* (1+ (plist-get plist :y)) padding) offset)))
+                 (+ (* y tile-size)
+                    (* (1+ y) padding) offset)))
             (rx ,(number-to-string (/ roundness 2)))
             (fill ,tile-color))))
-      ((eq (plist-get plist :type) 'static)
+      ((eq type 'static)
        `(rect
          (@ (width ,(number-to-string tile-size))
             (height ,(number-to-string tile-size))
-            (x ,(number-to-string (+ padding offset (plist-get plist :x))))
-            (y ,(number-to-string (+ padding offset (plist-get plist :y))))
+            (x ,(number-to-string
+                 (+ (* x tile-size)
+                    (* (1+ x) padding) offset)))
+            (y ,(number-to-string
+                 (+ (* y tile-size)
+                    (* (1+ y) padding) offset)))
             (rx ,(number-to-string (/ roundness 2)))
             (fill "#0000aa"))))
-      ((eq (plist-get plist :type) 'moving)
+      ((eq type 'moving)
        `(rect
          (@ (width ,(number-to-string tile-size))
             (height ,(number-to-string tile-size))
             (x ,(number-to-string
                  (+ padding offset
-                    (* (/ (plist-get plist :frame)
-                          (plist-get plist :frames))
-                       (- (plist-get plist :end-x)
-                          (plist-get plist :beg-x))))))
+                    (mod (floor (* (/ frame frames) (- end-x beg-x)))
+                         (abs (- end-x beg-x))))))
             (y ,(number-to-string
                  (+ padding offset
-                    (* (/ (plist-get plist :frame)
-                          (plist-get plist :frames))
-                       (- (plist-get plist :end-y)
-                          (plist-get plist :beg-y))))))
+                    (mod (floor (* (/ frame frames) (- end-y beg-y)))
+                         (abs (- end-y beg-y))))))
             (rx ,(number-to-string (/ roundness 2)))
             (fill "#aa0000"))))
       (t nil)))))
@@ -75,23 +84,17 @@
   (sxml-to-xml
    `(svg
      (@ (xmlns "http://www.w3.org/2000/svg") (width "360") (height "120"))
-     ;; abstract this away, too (background, foreground, animation layer)
-     (g ,@(cl-loop for plist in
-                   (memdb-select svg-animation-demo-state '(:layer background))
-                   collect
-                   (svg-animation-demo-render-state plist)))
-     (g ,@(cl-loop for plist in
-                   (memdb-select svg-animation-demo-state '(:layer foreground))
-                   collect
-                   (svg-animation-demo-render-state plist)))
-     (g ,@(cl-loop for plist in
-                   (memdb-select svg-animation-demo-state '(:layer animated))
-                   collect
-                   (svg-animation-demo-render-state plist))))))
+     ,@(cl-loop for item in '(background foreground animated) nconc
+                `(g ,@(cl-loop for plist in
+                               (pdata-select svg-animation-demo-state
+                                             `(:layer ,item))
+                               collect
+                               (svg-animation-demo-render-state plist)))))))
 
 (defun svg-animation-demo-init ()
   (interactive)
-  (memdb-update svg-animation-demo-state '(:layer foreground) :type 'static)
+  (pdata-update svg-animation-demo-state '(:layer foreground)
+    :type 'static :frame 0)
   (svg-animation-demo-redraw))
 
 (defun svg-animation-demo-redraw ()
@@ -118,19 +121,38 @@
 
 (defun svg-animation-demo-move ()
   (interactive)
-  (memdb-update svg-animation-demo-state '(:layer foreground) :type 'moving)
-  (memdb-update svg-animation-demo-state '(:layer foreground) :frame 0)
-  (while (< (memdb-select-at svg-animation-demo-state
-                             '(:layer foreground) :frame)
-            (memdb-select-at svg-animation-demo-state
-                             '(:layer foreground) :frames))
-    (svg-animation-demo-redraw)
-    (sit-for svg-animation-demo-interval)
-    (memdb-update svg-animation-demo-state '(:layer foreground)
-      :frame (1+ (memdb-select-at svg-animation-demo-state
-                                  '(:layer foreground) :frame))))
-  (svg-animation-demo-redraw)
-  (memdb-update svg-animation-demo-state '(:layer foreground) :frame 0))
+  (let ((direction
+         (cond ((pdata-select-at svg-animation-demo-state
+                                 '(:layer foreground :x 0 :y 0))
+                'left-to-right)
+               ((pdata-select-at svg-animation-demo-state
+                                 '(:layer foreground :x 3 :y 0))
+                'right-to-left)
+               (t 'unknown))))
+    (cond
+     ((eq direction 'left-to-right)
+      (pdata-update svg-animation-demo-state '(:layer foreground :x 0 :y 0)
+       :frame 1 :beg-x 0 :beg-y 0 :end-x 240 :end-y 0 :type 'moving))
+     ((eq direction 'right-to-left)
+      (pdata-update svg-animation-demo-state '(:layer foreground :x 3 :y 0)
+       :frame 1 :beg-x 240 :beg-y 0 :end-x 0 :end-y 0 :type 'moving)))
+    (while (<= (pdata-select-at svg-animation-demo-state
+                               '(:layer foreground) :frame)
+              (pdata-select-at svg-animation-demo-state
+                               '(:layer foreground) :frames))
+      (sit-for svg-animation-demo-interval)
+      (svg-animation-demo-redraw)
+      (pdata-update svg-animation-demo-state '(:type moving)
+        :frame (1+ (pdata-select-at svg-animation-demo-state
+                                    '(:type moving) :frame))))
+    (cond
+     ((eq direction 'left-to-right)
+      (pdata-update svg-animation-demo-state '(:type moving) :x 3 :y 0))
+     ((eq direction 'right-to-left)
+      (pdata-update svg-animation-demo-state '(:type moving) :x 0 :y 0)))
+    (pdata-update svg-animation-demo-state '(:type moving)
+      :type 'static :frame 0)
+    (svg-animation-demo-redraw)))
 
 (define-key svg-animation-demo-mode-map (kbd "g") 'svg-animation-demo-redraw)
 (define-key svg-animation-demo-mode-map (kbd "i") 'svg-animation-demo-init)

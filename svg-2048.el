@@ -127,6 +127,8 @@ Tiles use half of its value."
   "When set to t, appropriate overlay is displayed.")
 (defvar svg-2048-current-score 0
   "Holds the current game score.")
+(defvar svg-2048-game-won-already-p nil
+  "Did the player win and decide to continue this game?")
 
 (defun svg-2048-create-svg ()
   "Create a SVG representation of the current game state."
@@ -432,9 +434,10 @@ asking how to proceed."
             (cl-loop for ((_ . _) . value) in svg-2048-merged-tiles
                      collect value))
       (if (and (memq svg-2048-winning-tile svg-2048-merged-tile-values)
-               (null svg-2048-game-won))
-          (progn
-            (setq svg-2048-game-won t)
+               (not svg-2048-game-won-already-p))
+          (when (not svg-2048-game-won-already-p)
+            (setq svg-2048-game-won t
+                  svg-2048-game-won-already-p t)
             (svg-2048-redraw-board)
             (if (yes-or-no-p "Continue?")
                 (progn
@@ -443,12 +446,12 @@ asking how to proceed."
               (setq svg-2048-merged-tiles '())
               (svg-2048-new-game)
               (svg-2048-redraw-board)))
-      (unless (svg-2048-move-possible-p '(up down left right))
-        (setq svg-2048-game-over t)
-        (svg-2048-redraw-board)
-        (when (yes-or-no-p "New Game?")
-          (svg-2048-new-game)
-          (svg-2048-redraw-board))))))
+        (unless (svg-2048-move-possible-p '(up down left right))
+          (setq svg-2048-game-over t)
+          (svg-2048-redraw-board)
+          (when (yes-or-no-p "New Game?")
+            (svg-2048-new-game)
+            (svg-2048-redraw-board))))))
 
 (defun svg-2048-move-left ()
   "Move all tiles left."
@@ -491,10 +494,11 @@ the time) or 4."
   (svg-2048-initialize-board)
   (svg-2048-set-random-tile)
   (svg-2048-set-random-tile)
-  (setq svg-2048-current-score 0)
-  (setq svg-2048-game-over nil)
-  (setq svg-2048-game-won nil)
-  (setq svg-2048-merged-tiles '())
+  (setq svg-2048-score 0
+        svg-2048-game-over nil
+        svg-2048-game-won nil
+        svg-2048-game-won-already-p nil
+        svg-2048-merged-tiles '())
   (svg-2048-redraw-board))
 
 (defun svg-2048-redraw-board ()

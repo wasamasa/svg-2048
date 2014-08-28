@@ -158,7 +158,7 @@ Tiles use half of its value."
                 (fill ,svg-2048-board-color)))
             ,@(cl-loop for ((i . j) . value) in svg-2048-board collect
                        (svg-2048-tile i j value))
-            ,(cond ((not (null svg-2048-game-over))
+            ,(cond (svg-2048-game-over
                      `(g (rect
                           (@ (width ,(n->s field-width))
                              (height ,(n->s field-height))
@@ -176,7 +176,7 @@ Tiles use half of its value."
                              (x ,(n->s (/ field-width 2)))
                              (y ,(n->s (+ (/ field-height 2) 30))))
                           "Game over!")))
-                    ((not (null svg-2048-game-won))
+                    (svg-2048-game-won
                      `(g (rect
                           (@ (width ,(n->s field-width))
                              (height ,(n->s field-height))
@@ -204,7 +204,7 @@ X, Y and VALUE are taken in account."
             (if value (length (number-to-string value)) 0))
            (tile-roundness (/ svg-2048-roundness 2))
            (tile-color (cond
-                        ((null value) "#ccc0b4")
+                        ((not value) "#ccc0b4")
                         ((= value 2) "#eee4da")
                         ((= value 4) "#ede0c8")
                         ((= value 8) "#f2b179")
@@ -230,7 +230,7 @@ X, Y and VALUE are taken in account."
                             (> digits 4)) "25")
                        ((= digits 4) "30")))
            (text-color (cond
-                        ((or (null value) (< value 8))
+                        ((or (not value) (< value 8))
                          "#776e65")
                         (t "#f9f6f2")))
            (text-dy (cond
@@ -283,8 +283,8 @@ X, Y and VALUE are taken in account."
 
 (defun svg-2048-fill-board (rows)
   "Fill the board with the specified values.
-ROWS must be of the form ((n n n n) (n n n n) (n n n n)
-\(n n n n))."
+This function resets the board first, then inserts values as
+specified by ROWS.  ROWS must be a list of lists. For example"
   (setq svg-2048-board '())
   (cl-loop for i from 0 to (1- svg-2048-board-size) do
            (cl-loop for j from 0 to (1- svg-2048-board-size) do
@@ -317,7 +317,7 @@ directions."
          (new-y (cdr new-coord))
          (value (svg-2048-get-tile-value x y))
          (new-value (svg-2048-get-tile-value new-x new-y)))
-    (when (and value (not (equal (cons x y) new-coord)) (null new-value)) t)))
+    (when (and value (not (equal (cons x y) new-coord)) (not new-value)) t)))
 
 (defun svg-2048-mergeable-p (x y direction)
   "Returns t if the tile at X and Y is mergeable to the direction
@@ -371,7 +371,7 @@ once and the move is finished."
       (setq current-y (cdr new-coord)))
     (when (svg-2048-mergeable-p current-x current-y direction)
       (setq new-coord (svg-2048-new-coord current-x current-y direction))
-      (when (null (assoc new-coord svg-2048-merged-tiles))
+      (unless (assoc new-coord svg-2048-merged-tiles)
         (svg-2048-merge-tile current-x current-y direction)
         (setq current-x (car new-coord))
         (setq current-y (cdr new-coord))
@@ -409,7 +409,7 @@ leftmost and finish with the rightmost tiles."
 (defun svg-2048-empty-tiles ()
   "Returns a list of empty tiles."
   (cl-loop for ((i . j) . value) in svg-2048-board
-           if (null value) collect
+           unless value collect
            (cons i j)))
 
 (defun svg-2048-move-possible-p (directions)

@@ -514,11 +514,10 @@ the time) or 4."
 
 (define-derived-mode svg-2048-mode special-mode "2048"
   "A SVG game."
-  (with-current-buffer (get-buffer-create "*svg 2048*")
-    (buffer-disable-undo)
-    (when svg-2048-use-original-background
-      (buffer-face-set :background svg-2048-background-color))
-    (svg-2048-new-game)))
+  (buffer-disable-undo)
+  (when svg-2048-use-original-background
+    (buffer-face-set :background svg-2048-background-color))
+  (svg-2048-new-game))
 
 (define-minor-mode svg-2048-score-mode
   "Toggles score display for `svg-2048'."
@@ -551,11 +550,12 @@ the time) or 4."
   ;; TODO score file with best score so far
   ;; TODO implement animation (or at least some hints)
   (interactive)
-  (switch-to-buffer "*svg 2048*")
-  (svg-2048-mode)
-  (when svg-2048-display-score
-    (svg-2048-score-mode))
-  (goto-char (point-max)))
+  (with-current-buffer (get-buffer-create "*svg 2048*")
+    (svg-2048-mode)
+    (when svg-2048-display-score
+      (svg-2048-score-mode))
+    (goto-char (point-max)))
+  (display-buffer "*svg 2048*"))
 
 (provide 'svg-2048)
 

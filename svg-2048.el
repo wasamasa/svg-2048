@@ -129,7 +129,7 @@ Tiles use half of its value."
   "When set to t, appropriate overlay is displayed.")
 (defvar svg-2048-game-won nil
   "When set to t, appropriate overlay is displayed.")
-(defvar svg-2048-game-won-already-p nil
+(defvar svg-2048-game-won-already nil
   "Did the player win and decide to continue this game?")
 
 (defun svg-2048-create-svg ()
@@ -436,10 +436,10 @@ asking how to proceed."
             (cl-loop for ((_ . _) . value) in svg-2048-merged-tiles
                      collect value))
       (if (and (memq svg-2048-winning-tile svg-2048-merged-tile-values)
-               (not svg-2048-game-won-already-p))
-          (when (not svg-2048-game-won-already-p)
+               (not svg-2048-game-won-already))
+          (when (not svg-2048-game-won-already)
             (setq svg-2048-game-won t
-                  svg-2048-game-won-already-p t)
+                  svg-2048-game-won-already t)
             (svg-2048-redraw-board)
             (if (yes-or-no-p "Continue?")
                 (progn
@@ -499,7 +499,7 @@ the time) or 4."
   (setq svg-2048-score 0
         svg-2048-game-over nil
         svg-2048-game-won nil
-        svg-2048-game-won-already-p nil
+        svg-2048-game-won-already nil
         svg-2048-merged-tiles '())
   (svg-2048-redraw-board))
 

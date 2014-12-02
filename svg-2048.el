@@ -281,7 +281,7 @@ X, Y and VALUE are taken in account."
         (setq svg-2048-board
               (-replace-at (-elem-index old-tile svg-2048-board)
                            new-tile svg-2048-board))
-      (add-to-list 'svg-2048-board new-tile t))))
+      (setq svg-2048-board (-snoc svg-2048-board new-tile)))))
 
 (defun svg-2048-fill-board (rows)
   "Fill the board with the specified values.
@@ -377,9 +377,10 @@ once and the move is finished."
         (svg-2048-merge-tile current-x current-y direction)
         (setq current-x (car new-coord))
         (setq current-y (cdr new-coord))
-        (add-to-list 'svg-2048-merged-tiles
-                     (cons (cons current-x current-y)
-                           (svg-2048-get-tile-value current-x current-y)))))))
+        (setq svg-2048-merged-tiles
+              (cons (cons (cons current-x current-y)
+                          (svg-2048-get-tile-value current-x current-y))
+                    svg-2048-merged-tiles))))))
 
 (defun svg-2048-move-tiles (direction)
   "Move all tiles towards DIRECTION.  See `svg-2048-new-coord'
@@ -508,8 +509,8 @@ the time) or 4."
   (interactive)
   (setq buffer-read-only nil)
   (erase-buffer)
-  (insert-image (create-image (svg-2048-create-svg) 'svg t))
   (insert "\n")
+  (insert-image (create-image (svg-2048-create-svg) 'svg t))
   (setq buffer-read-only t))
 
 (define-derived-mode svg-2048-mode special-mode "2048"
@@ -554,7 +555,7 @@ the time) or 4."
     (svg-2048-mode)
     (when svg-2048-display-score
       (svg-2048-score-mode))
-    (goto-char (point-max)))
+    (goto-char (point-min)))
   (display-buffer "*svg 2048*"))
 
 (provide 'svg-2048)

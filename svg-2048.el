@@ -1,6 +1,6 @@
 ;;; svg-2048.el --- A SVG version of the titular HTML5 game
 
-;; Copyright (C) 2014 Vasilij Schneidermann <v.schneidermann@gmail.com>
+;; Copyright (C) 2014-2015 Vasilij Schneidermann <v.schneidermann@gmail.com>
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/svg-2048

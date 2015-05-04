@@ -157,3 +157,5 @@
 (define-key svg-animation-demo-mode-map (kbd "g") 'svg-animation-demo-redraw)
 (define-key svg-animation-demo-mode-map (kbd "i") 'svg-animation-demo-init)
 (define-key svg-animation-demo-mode-map (kbd "m") 'svg-animation-demo-move)
+
+;; TODO https://developer.mozilla.org/en-US/docs/Web/CSS/timing-function#ease-in-out
